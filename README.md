@@ -7,7 +7,7 @@ REST API for the **Arrow Maze** game: user authentication, progress sync, global
 remote level definitions. Built with **NestJS + TypeScript**, following **Clean Architecture**,
 **SOLID**, **GoF patterns**, and **aspect-oriented cross-cutting concerns**.
 
-[![CI](https://img.shields.io/badge/CI-GitHub_Actions-2088FF?logo=githubactions&logoColor=white)](../../actions)
+[![CI](https://github.com/danielsaco098/ArrowMaze-Backend/actions/workflows/ci.yml/badge.svg)](https://github.com/danielsaco098/ArrowMaze-Backend/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/tests-unit%20%7C%20integration%20%7C%20contract-success?logo=jest)](#-running-tests)
 [![NestJS](https://img.shields.io/badge/NestJS-11-E0234E?logo=nestjs&logoColor=white)](https://nestjs.com)
 [![Swagger](https://img.shields.io/badge/API-OpenAPI%2FSwagger-85EA2D?logo=swagger&logoColor=black)](#-api-documentation)
