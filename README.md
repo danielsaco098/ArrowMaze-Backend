@@ -50,8 +50,90 @@ Same **Clean Architecture** dependency rule as the client — everything points 
 The dependency rule means **use cases never import Nest or Express** — they depend on the abstract-class
 ports in `src/application/ports`, which the Layer 4 providers implement and the modules bind via DI.
 
-> Backend-specific **class diagram** and **layer diagram** are pending in
-> [`docs/diagrams`](./docs/diagrams) (the client diagrams describe the game domain, not the API).
+### Layer diagram (dependency rule)
+
+```mermaid
+flowchart TB
+    subgraph L4["Layer 4 · Frameworks & Drivers"]
+        direction TB
+        subgraph L3["Layer 3 · Interface Adapters"]
+            direction TB
+            subgraph L2["Layer 2 · Application"]
+                direction TB
+                subgraph L1["Layer 1 · Domain"]
+                    DOMAIN["User · LevelDefinition · ProgressRecord<br/>LeaderboardEntry · DomainError"]
+                end
+                USECASES["Use cases: RegisterUser · LoginUser<br/>GetLevels/GetLevel/UpsertLevel<br/>SyncProgress/GetProgress/GetLeaderboard"]
+                PORTS["Ports (abstract classes): UserRepository · PasswordHasher<br/>TokenService · IdGenerator · LevelRepository<br/>ProgressRepository · LeaderboardRepository"]
+            end
+            CONTROLLERS["Controllers + DTOs:<br/>Auth · Levels · Progress · Leaderboard"]
+        end
+        INFRA["InMemory*Repository · JwtTokenService · BcryptPasswordHasher<br/>UuidIdGenerator · JwtStrategy/Guards · ExceptionFilter · LoggingInterceptor"]
+    end
+
+    CONTROLLERS -->|depends on| USECASES
+    USECASES -->|depends on| PORTS
+    USECASES -->|uses| DOMAIN
+    INFRA -.->|implements| PORTS
+```
+
+### Class diagram (architecture-significant)
+
+```mermaid
+classDiagram
+    class UserRepository {
+        <<abstract>>
+    }
+    class PasswordHasher {
+        <<abstract>>
+    }
+    class TokenService {
+        <<abstract>>
+    }
+    class LevelRepository {
+        <<abstract>>
+    }
+    class ProgressRepository {
+        <<abstract>>
+    }
+    class LeaderboardRepository {
+        <<abstract>>
+    }
+
+    class RegisterUserUseCase
+    class LoginUserUseCase
+    class UpsertLevelUseCase
+    class SyncProgressUseCase
+
+    class AuthController
+    class LevelsController
+    class ProgressController
+
+    RegisterUserUseCase --> UserRepository
+    RegisterUserUseCase --> PasswordHasher
+    RegisterUserUseCase --> TokenService
+    LoginUserUseCase --> UserRepository
+    UpsertLevelUseCase --> LevelRepository
+    SyncProgressUseCase --> ProgressRepository
+    SyncProgressUseCase --> LeaderboardRepository
+
+    AuthController --> RegisterUserUseCase
+    AuthController --> LoginUserUseCase
+    LevelsController --> UpsertLevelUseCase
+    ProgressController --> SyncProgressUseCase
+
+    InMemoryUserRepository ..|> UserRepository
+    BcryptPasswordHasher ..|> PasswordHasher
+    JwtTokenService ..|> TokenService
+    InMemoryLevelRepository ..|> LevelRepository
+    InMemoryProgressRepository ..|> ProgressRepository
+    InMemoryLeaderboardRepository ..|> LeaderboardRepository
+```
+
+> Editable diagram sources (PlantUML) live in
+> [`docs/diagrams/clean-architecture.puml`](./docs/diagrams/clean-architecture.puml) and
+> [`docs/diagrams/class-diagram.puml`](./docs/diagrams/class-diagram.puml). The Mermaid blocks above render
+> directly on GitHub; the PlantUML files can be exported to PNG with any PlantUML renderer.
 
 ---
 

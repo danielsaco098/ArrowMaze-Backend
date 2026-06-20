@@ -4,12 +4,21 @@ This folder holds the design documentation required by the project brief (Sectio
 
 ## Diagrams
 
-| File | Description | Editable source |
+| File | Description | Status |
 | --- | --- | --- |
-| `diagrams/clean-architecture-client-ref.png` | Reference copy of the client's Clean Architecture diagram (shared layering vocabulary). | n/a (reference) |
-| `diagrams/class-diagram.png` | ⚠️ **Pending** — backend class diagram (controllers, use cases, JWT/auth, repositories, entities). | ⚠️ Pending `.drawio`/`.puml`. |
-| `diagrams/clean-architecture.png` | ⚠️ **Pending** — backend-specific Clean Architecture diagram. | ⚠️ Pending `.drawio`/`.puml`. |
+| `diagrams/clean-architecture.puml` | Backend Clean Architecture (4 concentric layers + dependency rule). | ✅ Editable source (PlantUML) |
+| `diagrams/class-diagram.puml` | Backend class diagram (entities, ports, use cases, controllers, infrastructure). | ✅ Editable source (PlantUML) |
+| `diagrams/clean-architecture-client-ref.png` | Reference copy of the client's diagram (shared layering vocabulary). | Reference only |
 
-> **Action required before delivery:** the backend needs **its own** class diagram and Clean Architecture diagram
-> (the client diagrams describe the game domain, not the API). Add both the PNG export and the editable source here,
-> then embed the PNGs in the root [`README.md`](../README.md).
+Both diagrams are also embedded as **Mermaid** in the root [`README.md`](../README.md), which GitHub renders
+inline (no export step needed to view them).
+
+### Regenerating PNGs (optional)
+
+The `.puml` sources can be exported to PNG/SVG with any PlantUML renderer, e.g.:
+
+```bash
+# with the PlantUML CLI / jar
+plantuml docs/diagrams/clean-architecture.puml docs/diagrams/class-diagram.puml
+# or paste the file contents into https://www.plantuml.com/plantuml
+```

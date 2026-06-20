@@ -1,0 +1,41 @@
+@startuml clean-architecture
+' Arrow Maze Backend — Clean Architecture (concentric layers + dependency rule)
+title Arrow Maze Backend — Clean Architecture
+
+skinparam rectangle {
+  BorderColor #333333
+  FontStyle bold
+}
+skinparam shadowing false
+
+rectangle "Layer 4 — Frameworks & Drivers\n(NestJS modules, Swagger, config)" #DDE6F0 {
+  rectangle "Layer 3 — Interface Adapters\n(REST controllers + DTOs)" #CFE8DA {
+    rectangle "Layer 2 — Application\n(use cases + ports + AOP)" #E8DDF0 {
+      rectangle "Layer 1 — Domain\n(entities, errors)" #F5E6B3 {
+        card "User, LevelDefinition,\nProgressRecord, LeaderboardEntry\nDomainError" as DOMAIN
+      }
+      card "Use cases:\nRegisterUser, LoginUser,\nGetLevels/GetLevel/UpsertLevel,\nSyncProgress/GetProgress/GetLeaderboard" as USECASES
+      card "Ports (abstract classes):\nUserRepository, PasswordHasher,\nTokenService, IdGenerator,\nLevelRepository, ProgressRepository,\nLeaderboardRepository" as PORTS
+    }
+    card "AuthController, LevelsController,\nProgressController, LeaderboardController\n+ validated DTOs" as CONTROLLERS
+  }
+  card "InMemory*Repository,\nJwtTokenService, BcryptPasswordHasher,\nUuidIdGenerator, JwtStrategy/Guards,\nDomainExceptionFilter, LoggingInterceptor" as INFRA
+}
+
+' Dependency rule: arrows always point INWARD
+CONTROLLERS -[#0050B3]-> USECASES : depends on
+USECASES -[#0050B3]-> PORTS : depends on
+USECASES -[#0050B3]-> DOMAIN : uses
+INFRA .[#7A3FB3].|> PORTS : implements (DIP)
+INFRA -[#0050B3]-> CONTROLLERS : wires (DI modules)
+
+legend right
+  | Color | Layer |
+  | <#F5E6B3> | 1 — Domain |
+  | <#E8DDF0> | 2 — Application |
+  | <#CFE8DA> | 3 — Interface Adapters |
+  | <#DDE6F0> | 4 — Frameworks & Drivers |
+  The Dependency Rule: source code dependencies
+  always point inward, toward the Domain.
+endlegend
+@enduml
