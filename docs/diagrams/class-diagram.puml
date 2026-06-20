@@ -1,0 +1,113 @@
+@startuml class-diagram
+' Arrow Maze Backend — Class diagram (architecture-significant classes)
+title Arrow Maze Backend — Class Diagram
+
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+
+package "Layer 1 — Domain" #F5E6B3 {
+  class User {
+    +id: string
+    +username: string
+    +passwordHash: string
+    +role: 'user'|'admin'
+    +isAdmin(): boolean
+  }
+  class LevelDefinition {
+    +id: number
+    +name: string
+    +difficulty: Difficulty
+    +rows: number
+    +cols: number
+    +cells: CellData[]
+  }
+  class LeaderboardEntry {
+    +levelId: number
+    +userId: string
+    +username: string
+    +score: number
+    +achievedAt: Date
+  }
+  abstract class DomainError {
+    +status: number
+  }
+  DomainError <|-- UsernameTakenError
+  DomainError <|-- InvalidCredentialsError
+  DomainError <|-- LevelNotFoundError
+}
+
+package "Layer 2 — Application (ports)" #E8DDF0 {
+  abstract class UserRepository
+  abstract class PasswordHasher
+  abstract class TokenService
+  abstract class IdGenerator
+  abstract class LevelRepository
+  abstract class ProgressRepository
+  abstract class LeaderboardRepository
+
+  class RegisterUserUseCase
+  class LoginUserUseCase
+  class UpsertLevelUseCase
+  class SyncProgressUseCase
+}
+
+package "Layer 3 — Interface Adapters" #CFE8DA {
+  class AuthController
+  class LevelsController
+  class ProgressController
+  class LeaderboardController
+}
+
+package "Layer 4 — Frameworks & Drivers" #DDE6F0 {
+  class InMemoryUserRepository
+  class InMemoryLevelRepository
+  class InMemoryProgressRepository
+  class InMemoryLeaderboardRepository
+  class BcryptPasswordHasher
+  class JwtTokenService
+  class UuidIdGenerator
+  class JwtStrategy
+  class AdminGuard
+  class DomainExceptionFilter
+}
+
+' Use cases depend on ports (DIP)
+RegisterUserUseCase --> UserRepository
+RegisterUserUseCase --> PasswordHasher
+RegisterUserUseCase --> TokenService
+RegisterUserUseCase --> IdGenerator
+LoginUserUseCase --> UserRepository
+LoginUserUseCase --> PasswordHasher
+LoginUserUseCase --> TokenService
+UpsertLevelUseCase --> LevelRepository
+SyncProgressUseCase --> ProgressRepository
+SyncProgressUseCase --> LeaderboardRepository
+
+' Use cases produce / use domain entities
+RegisterUserUseCase ..> User
+UpsertLevelUseCase ..> LevelDefinition
+SyncProgressUseCase ..> LeaderboardEntry
+
+' Controllers depend on use cases
+AuthController --> RegisterUserUseCase
+AuthController --> LoginUserUseCase
+LevelsController --> UpsertLevelUseCase
+ProgressController --> SyncProgressUseCase
+
+' Infrastructure implements ports (realization)
+InMemoryUserRepository ..|> UserRepository
+InMemoryLevelRepository ..|> LevelRepository
+InMemoryProgressRepository ..|> ProgressRepository
+InMemoryLeaderboardRepository ..|> LeaderboardRepository
+BcryptPasswordHasher ..|> PasswordHasher
+JwtTokenService ..|> TokenService
+UuidIdGenerator ..|> IdGenerator
+
+legend right
+  Solid arrow = association / dependency
+  Dashed + triangle = implements (realization)
+  Patterns: Adapter (Jwt/Bcrypt/InMemory impls),
+  Strategy (JwtStrategy, TokenService), Singleton (Nest providers)
+endlegend
+@enduml
