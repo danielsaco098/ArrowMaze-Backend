@@ -5,6 +5,10 @@ export interface AppConfig {
     secret: string;
     expiresIn: string;
   };
+  admin: {
+    username: string;
+    password: string;
+  };
 }
 
 export const configuration = (): AppConfig => ({
@@ -12,5 +16,9 @@ export const configuration = (): AppConfig => ({
   jwt: {
     secret: process.env.JWT_SECRET ?? 'dev-secret-change-me',
     expiresIn: process.env.JWT_EXPIRES_IN ?? '1d',
+  },
+  admin: {
+    username: process.env.ADMIN_USERNAME ?? 'admin',
+    password: process.env.ADMIN_PASSWORD ?? 'admin12345',
   },
 });
