@@ -8,7 +8,7 @@ remote level definitions. Built with **NestJS + TypeScript**, following **Clean 
 **SOLID**, **GoF patterns**, and **aspect-oriented cross-cutting concerns**.
 
 [![CI](https://github.com/danielsaco098/ArrowMaze-Backend/actions/workflows/ci.yml/badge.svg)](https://github.com/danielsaco098/ArrowMaze-Backend/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-unit%20%7C%20integration%20%7C%20contract-success?logo=jest)](#-running-tests)
+[![Tests](https://img.shields.io/badge/tests-unit%20%7C%20e2e-success?logo=jest)](#-running-tests)
 [![NestJS](https://img.shields.io/badge/NestJS-11-E0234E?logo=nestjs&logoColor=white)](https://nestjs.com)
 [![Swagger](https://img.shields.io/badge/API-OpenAPI%2FSwagger-85EA2D?logo=swagger&logoColor=black)](#-api-documentation)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
@@ -27,11 +27,12 @@ everything the game must not trust to the device alone:
 - **Global leaderboard** — best scores per level across all players.
 - **Remote level definitions** — fetch/update levels so new content ships **without** a new app release.
 
-> **Tech stack:** NestJS · TypeScript (strict) · PostgreSQL + Prisma (behind a repository port) ·
-> Passport-JWT · `@nestjs/swagger` (OpenAPI) · Jest + Supertest (integration) · Pact (contract).
+> **Tech stack:** NestJS 11 · TypeScript (strict) · Passport-JWT · bcryptjs · `@nestjs/config` ·
+> `@nestjs/swagger` (OpenAPI) · Jest + Supertest (e2e).
 >
-> _Database/ORM are deferrable details: PostgreSQL + Prisma is the default, swappable behind
-> `ILevelRepository` / `IUserRepository` / `IScoreRepository` without touching use cases._
+> _Persistence is **in-memory** by default (functional and dependency-free for demos and tests). It is a
+> deferrable detail: the repository ports (`UserRepository`, `LevelRepository`, `ProgressRepository`,
+> `LeaderboardRepository`) can be backed by a database (e.g. PostgreSQL) without touching the use cases._
 
 ---
 
@@ -41,13 +42,13 @@ Same **Clean Architecture** dependency rule as the client — everything points 
 
 | Layer | Folder | Responsibility | Key components |
 | --- | --- | --- | --- |
-| **1 — Domain** | `src/domain` | Pure business rules. | `User`, `Score`, `LevelDefinition`, `LeaderboardEntry` entities + VOs; no Nest/Prisma imports |
-| **2 — Application** | `src/application` | Use cases + ports. | `RegisterUserUseCase`, `LoginUseCase`, `SyncProgressUseCase`, `GetLeaderboardUseCase`, `GetLevelsUseCase`, `UpsertLevelUseCase`; ports `IUserRepository`, `IScoreRepository`, `ILevelRepository`, `ITokenService`, `IHasher` |
-| **3 — Interface Adapters** | `src/adapters` | Controllers, presenters, repo implementations, mappers. | REST controllers, DTOs + validation, `PrismaUserRepository`, mappers (entity ⇄ DTO/Prisma model) |
-| **4 — Frameworks & Drivers** | `src/infrastructure` | Volatile details. | Nest modules, Prisma client, Passport-JWT strategy, Swagger setup, config |
+| **1 — Domain** | `src/domain` | Pure business rules, no framework imports. | Entities `User`, `LevelDefinition`, `ProgressRecord`, `LeaderboardEntry`; `DomainError` hierarchy (each carries its HTTP `status`) |
+| **2 — Application** | `src/application` | Use cases + ports (ports are **abstract classes** doubling as DI tokens). | Use cases `RegisterUser`, `LoginUser`, `GetLevels`/`GetLevel`/`UpsertLevel`, `SyncProgress`, `GetProgress`, `GetLeaderboard`; ports `UserRepository`, `PasswordHasher`, `TokenService`, `IdGenerator`, `LevelRepository`, `ProgressRepository`, `LeaderboardRepository` |
+| **3 — Interface Adapters** | `src/infrastructure/http` | REST controllers + DTOs (validation + Swagger). | `auth`, `levels`, `progress`/`leaderboard` controllers and DTOs |
+| **4 — Frameworks & Drivers** | `src/infrastructure`, `src/modules`, `src/shared` | Volatile details. | In-memory repositories, `JwtTokenService`/`BcryptPasswordHasher`/`UuidIdGenerator`, Passport `JwtStrategy`, guards, Nest modules, Swagger setup, config |
 
-The dependency rule means **use cases never import Nest, Prisma, or Express** — they depend on the
-ports in `src/application/ports`, which the adapters implement.
+The dependency rule means **use cases never import Nest or Express** — they depend on the abstract-class
+ports in `src/application/ports`, which the Layer 4 providers implement and the modules bind via DI.
 
 > Backend-specific **class diagram** and **layer diagram** are pending in
 > [`docs/diagrams`](./docs/diagrams) (the client diagrams describe the game domain, not the API).
@@ -80,54 +81,56 @@ Interactive **Swagger / OpenAPI** docs are served at:
 http://localhost:3000/api/docs
 ```
 
-The OpenAPI JSON is available at `/api/docs-json` and is used as the source of truth for the Pact
-**contract tests** shared with the client.
+The raw OpenAPI JSON is available at `/api/docs-json`. All eight endpoints, request/response schemas and
+the Bearer-auth scheme are documented there.
 
 ---
 
 ## 🧩 Design Patterns (GoF)
 
-| Category | Pattern | Where / Why |
-| --- | --- | --- |
-| Creational | **Factory** | Build domain entities from persistence models in mappers. |
-| Creational | **Singleton** | Nest providers are singletons by default (e.g. `PrismaService`, config). |
-| Structural | **Adapter** | `PrismaUserRepository` adapts Prisma to the `IUserRepository` port. |
-| Structural | **Facade** | `AuthFacade` simplifies hashing + token issuing for controllers. |
-| Behavioral | **Strategy** | Pluggable token service (`JwtTokenService`) and scoring/ranking strategy. |
-| Behavioral | **Decorator** | Use-case decorators add logging, metrics, auth, and caching (AOP). |
+| Category | Pattern | Where / Why | Code |
+| --- | --- | --- | --- |
+| Creational | **Singleton** | NestJS providers are singletons by default, so the in-memory repositories hold one shared store per process and services exist once. | [in-memory-user-repository.ts](./src/infrastructure/persistence/in-memory-user-repository.ts) |
+| Structural | **Adapter** | `JwtTokenService` adapts Nest's `JwtService` to the `TokenService` port; `BcryptPasswordHasher` adapts bcryptjs to `PasswordHasher`; the in-memory repos adapt a `Map` to the repository ports. | [jwt-token-service.ts](./src/infrastructure/security/jwt-token-service.ts) · [bcrypt-password-hasher.ts](./src/infrastructure/security/bcrypt-password-hasher.ts) |
+| Behavioral | **Strategy** | Passport's `JwtStrategy` defines the token-validation algorithm; the `TokenService`/repository ports make their implementations interchangeable (e.g. swap JWT or a DB backend) without changing use cases. | [jwt.strategy.ts](./src/infrastructure/security/jwt.strategy.ts) · [token-service.ts](./src/application/ports/token-service.ts) |
 
 ---
 
 ## 🔠 SOLID Principles
 
-- **S — Single Responsibility.** Controllers handle HTTP, use cases handle orchestration, repositories
-  handle persistence — never mixed.
-- **O — Open/Closed.** New endpoints/use cases are added without modifying existing ones; new repository
-  backends extend the port, not the use case.
-- **L — Liskov Substitution.** Any `IUserRepository` implementation (Prisma, in-memory for tests) is
-  substitutable without breaking use cases.
-- **I — Interface Segregation.** Narrow ports (`ITokenService`, `IHasher`, `IUserRepository`) instead of
-  one service interface.
-- **D — Dependency Inversion.** Use cases depend on ports injected via Nest's DI container; concretions
-  are wired in the infrastructure modules.
+- **S — Single Responsibility.** Controllers handle HTTP, use cases orchestrate
+  ([`SyncProgressUseCase`](./src/application/use-cases/sync-progress.use-case.ts)), repositories handle
+  persistence — never mixed.
+- **O — Open/Closed.** New endpoints/use cases are added without modifying existing ones; a new repository
+  backend implements the port instead of editing the use case.
+- **L — Liskov Substitution.** Any [`UserRepository`](./src/application/ports/user-repository.ts)
+  implementation (in-memory now, a DB-backed one later, or a fake in tests) is substitutable without
+  breaking use cases.
+- **I — Interface Segregation.** Narrow, focused ports
+  ([`PasswordHasher`](./src/application/ports/password-hasher.ts),
+  [`TokenService`](./src/application/ports/token-service.ts),
+  [`IdGenerator`](./src/application/ports/id-generator.ts)) instead of one fat service interface.
+- **D — Dependency Inversion.** Use cases depend on the abstract-class ports; the
+  [modules](./src/modules/auth.module.ts) bind each port to a concrete provider via Nest's DI container.
 
 ---
 
 ## 🪡 Aspect-Oriented Programming (AOP)
 
-Cross-cutting concerns are separated from business logic **without an AOP library**, using the
-**Decorator pattern over a shared `UseCase<I, O>` port** (SOLID-based strategy). Use cases are wrapped
-at module-wiring time:
+Cross-cutting concerns are separated from the business logic **without an AOP library**, using NestJS's
+native aspect primitives — interceptors, filters and guards — which wrap handlers transparently:
 
-- **Logging & tracing** — `LoggingUseCaseDecorator` records input/output and duration of each use case.
-- **Centralized exception handling** — a global Nest **exception filter** plus a decorator apply
-  consistent error mapping, retries, and fallbacks for network/persistence failures.
-- **Security / authorization** — `AuthorizationUseCaseDecorator` verifies an active session before
-  protected use cases (save progress, leaderboard writes) execute.
-- **Result caching** — `CachingUseCaseDecorator` memoizes `GetLeaderboardUseCase` while data is unchanged.
+- **Centralized exception handling** —
+  [`DomainExceptionFilter`](./src/shared/filters/domain-exception.filter.ts) catches any `DomainError`
+  and maps it to a consistent HTTP response, so use cases just `throw` and never import anything HTTP.
+- **Logging & tracing** — [`LoggingInterceptor`](./src/shared/interceptors/logging.interceptor.ts) records
+  the method, path and duration of every request without a single log line in the controllers or use cases.
+- **Security / authorization** — [`JwtAuthGuard`](./src/infrastructure/security/jwt-auth.guard.ts) and
+  [`AdminGuard`](./src/infrastructure/security/admin.guard.ts) enforce an active session and the admin role
+  before protected handlers run, keeping authorization out of the business logic.
 
-The business code never references a logger, auth checker, or cache — decorators compose around the
-shared `execute()` contract.
+The business code never references a logger, an HTTP status, or an auth check — those concerns live in the
+filter, interceptor and guards and apply declaratively.
 
 ---
 
@@ -136,8 +139,7 @@ shared `execute()` contract.
 ### Prerequisites
 
 - **Node.js** ≥ 20 and **npm**
-- **PostgreSQL** ≥ 14 (or Docker)
-- A `.env` file (see `.env.example`)
+- A `.env` file (optional — see `.env.example`; sensible defaults are built in)
 
 ### Installation
 
@@ -145,17 +147,20 @@ shared `execute()` contract.
 git clone <backend-repo-url> ArrowMaze-Backend
 cd ArrowMaze-Backend
 npm install
-cp .env.example .env        # set DATABASE_URL and JWT_SECRET
-npx prisma migrate dev      # create the schema
-npm run seed                # optional: seed the 15 levels + demo users
+cp .env.example .env   # optional: set JWT_SECRET and the seeded admin credentials
 ```
 
 ### Run locally
 
 ```bash
+npm run build        # compile
 npm run start:dev    # watch mode at http://localhost:3000
-npm run start:prod   # production build
+npm run start:prod   # run the compiled build
 ```
+
+On startup a default **admin** account is seeded (`admin` / `admin12345` by default) so the admin-only
+level endpoint is usable immediately. Sample levels are seeded too. Data is in-memory, so it resets on
+restart.
 
 ---
 
@@ -163,15 +168,14 @@ npm run start:prod   # production build
 
 ```bash
 npm test               # unit tests (Jest, AAA, should_..._when_...)
-npm run test:e2e       # integration tests (Supertest + in-memory/test DB)
-npm run test:contract  # Pact contract verification against the client
+npm run test:e2e       # integration tests (Supertest against the real Nest app)
 npm run test:cov       # coverage
 ```
 
-- **Unit** — entities, use cases, and services in isolation with mocked ports.
-- **Integration** — real use cases against a test database; HTTP endpoints via Supertest end-to-end.
-- **Contract** — Pact verifies the client⇄backend contract holds across changes.
-- CI runs all suites on every Pull Request (`.github/workflows/ci.yml`).
+- **Unit** — use cases in isolation against fakes/in-memory adapters of the ports.
+- **Integration (e2e)** — the full application is bootstrapped and the HTTP endpoints are exercised with
+  Supertest (register → login → JWT-protected calls, admin authorization, progress → leaderboard).
+- CI runs build + unit + e2e on every push and Pull Request (`.github/workflows/ci.yml`).
 
 ---
 
