@@ -14,6 +14,7 @@ import { BcryptPasswordHasher } from '../infrastructure/security/bcrypt-password
 import { JwtTokenService } from '../infrastructure/security/jwt-token-service';
 import { UuidIdGenerator } from '../infrastructure/security/uuid-id-generator';
 import { JwtStrategy } from '../infrastructure/security/jwt.strategy';
+import { DefaultAdminSeeder } from '../infrastructure/security/default-admin.seeder';
 
 /**
  * Wires the auth slice: maps each application port (abstract class) to its
@@ -41,6 +42,7 @@ import { JwtStrategy } from '../infrastructure/security/jwt.strategy';
     RegisterUserUseCase,
     LoginUserUseCase,
     JwtStrategy,
+    DefaultAdminSeeder,
     { provide: UserRepository, useClass: InMemoryUserRepository },
     { provide: PasswordHasher, useClass: BcryptPasswordHasher },
     { provide: TokenService, useClass: JwtTokenService },
