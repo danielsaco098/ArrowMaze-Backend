@@ -8,6 +8,9 @@ import { LoggingInterceptor } from './shared/interceptors/logging.interceptor';
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
 
+  // Allow the web/mobile client (a different origin) to call the API.
+  app.enableCors();
+
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
   );
