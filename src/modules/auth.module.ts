@@ -4,12 +4,10 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { RegisterUserUseCase } from '../application/use-cases/register-user.use-case';
 import { LoginUserUseCase } from '../application/use-cases/login-user.use-case';
-import { UserRepository } from '../application/ports/user-repository';
 import { PasswordHasher } from '../application/ports/password-hasher';
 import { TokenService } from '../application/ports/token-service';
 import { IdGenerator } from '../application/ports/id-generator';
 import { AuthController } from '../infrastructure/http/auth/auth.controller';
-import { InMemoryUserRepository } from '../infrastructure/persistence/in-memory-user-repository';
 import { BcryptPasswordHasher } from '../infrastructure/security/bcrypt-password-hasher';
 import { JwtTokenService } from '../infrastructure/security/jwt-token-service';
 import { UuidIdGenerator } from '../infrastructure/security/uuid-id-generator';
@@ -19,8 +17,8 @@ import { DefaultAdminSeeder } from '../infrastructure/security/default-admin.see
 /**
  * Wires the auth slice: maps each application port (abstract class) to its
  * concrete Layer 4 implementation, so use cases depend only on abstractions
- * (Dependency Inversion). Exports the user repository + passport so other
- * modules can reuse the same store and the JWT guard.
+ * (Dependency Inversion). The user store comes from the global PersistenceModule;
+ * this module exports passport/JWT so other modules can reuse the guard.
  */
 @Module({
   imports: [
@@ -43,11 +41,10 @@ import { DefaultAdminSeeder } from '../infrastructure/security/default-admin.see
     LoginUserUseCase,
     JwtStrategy,
     DefaultAdminSeeder,
-    { provide: UserRepository, useClass: InMemoryUserRepository },
     { provide: PasswordHasher, useClass: BcryptPasswordHasher },
     { provide: TokenService, useClass: JwtTokenService },
     { provide: IdGenerator, useClass: UuidIdGenerator },
   ],
-  exports: [UserRepository, PassportModule, JwtModule],
+  exports: [PassportModule, JwtModule],
 })
 export class AuthModule {}
