@@ -7,6 +7,10 @@ export interface CellData {
   col: number;
   kind: CellKind;
   direction?: DirectionName;
+  /** Cells sharing an arrowId form one multi-cell arrow that slides as a block. */
+  arrowId?: number;
+  /** Optional display colour; the client derives one from arrowId when absent. */
+  color?: string;
 }
 
 /**

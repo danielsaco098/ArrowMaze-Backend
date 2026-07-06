@@ -36,6 +36,23 @@ export class CellDataDto {
   @IsOptional()
   @IsEnum(DIRECTIONS)
   direction?: (typeof DIRECTIONS)[number];
+
+  @ApiPropertyOptional({
+    description:
+      'Cells sharing an arrowId form one multi-cell arrow that slides as a block.',
+  })
+  @IsOptional()
+  @IsInt()
+  arrowId?: number;
+
+  @ApiPropertyOptional({
+    example: '#6FE3C4',
+    description: 'Optional display colour.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(16)
+  color?: string;
 }
 
 export class UpsertLevelDto {
