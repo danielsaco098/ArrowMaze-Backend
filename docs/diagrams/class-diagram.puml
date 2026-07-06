@@ -60,10 +60,14 @@ package "Layer 3 — Interface Adapters" #CFE8DA {
 }
 
 package "Layer 4 — Frameworks & Drivers" #DDE6F0 {
+  class TypeOrmUserRepository
+  class TypeOrmProgressRepository
+  class TypeOrmLeaderboardRepository
   class InMemoryUserRepository
   class InMemoryLevelRepository
   class InMemoryProgressRepository
   class InMemoryLeaderboardRepository
+  class PersistenceModule
   class BcryptPasswordHasher
   class JwtTokenService
   class UuidIdGenerator
@@ -95,7 +99,12 @@ AuthController --> LoginUserUseCase
 LevelsController --> UpsertLevelUseCase
 ProgressController --> SyncProgressUseCase
 
-' Infrastructure implements ports (realization)
+' Infrastructure implements ports (realization).
+' PersistenceModule picks TypeORM (Postgres) when DATABASE_URL is set,
+' otherwise (and always under tests) the in-memory adapters.
+TypeOrmUserRepository ..|> UserRepository
+TypeOrmProgressRepository ..|> ProgressRepository
+TypeOrmLeaderboardRepository ..|> LeaderboardRepository
 InMemoryUserRepository ..|> UserRepository
 InMemoryLevelRepository ..|> LevelRepository
 InMemoryProgressRepository ..|> ProgressRepository
@@ -107,7 +116,7 @@ UuidIdGenerator ..|> IdGenerator
 legend right
   Solid arrow = association / dependency
   Dashed + triangle = implements (realization)
-  Patterns: Adapter (Jwt/Bcrypt/InMemory impls),
+  Patterns: Adapter (Jwt/Bcrypt/TypeOrm/InMemory impls),
   Strategy (JwtStrategy, TokenService), Singleton (Nest providers)
 endlegend
 @enduml

@@ -96,6 +96,23 @@ was committed with Conventional Commits and a `Co-Authored-By: Claude` trailer f
   and added verified links to actual source files.
 - **Team modifications:** Verified every `./src` link resolves and that no stale term remained.
 
+### Entry 007 — PostgreSQL persistence (local + remote)
+
+- **Task:** Migrate users/progress/leaderboard from the in-memory stores to a real PostgreSQL database,
+  supporting a local instance for development and a cloud instance (Neon) for production.
+- **Prompt (paraphrased):** "The project must persist accounts and leaderboard scores; migrate to a local
+  database and a remote database."
+- **Result:** TypeORM + `pg` added; ORM entities in Layer 4 mapped to/from domain entities; `TypeOrm*`
+  repositories implementing the same abstract ports; a global dynamic `PersistenceModule.forRoot()` that
+  picks Postgres when `DATABASE_URL` is set and falls back to in-memory otherwise (and always under
+  tests). Verified live against both databases: registration survives a server restart, progress/sync and
+  leaderboard write real rows. 13 unit + 12 e2e tests still green with no DB required.
+- **Team modifications:** Chose Postgres on both sides (a local Postgres 17 instance was already
+  installed) over SQLite-local; kept level definitions in-memory as static seeded content; accepted
+  `synchronize=true` (auto schema) as appropriate for the project scope instead of migration files.
+- **Lessons / limitations:** Ports as abstract classes paid off — zero changes to use cases or
+  controllers. `synchronize=true` would be replaced by migrations in a production system.
+
 ---
 
 ## 3. Critical Evaluation
@@ -120,6 +137,7 @@ was committed with Conventional Commits and a `Co-Authored-By: Claude` trailer f
 - [x] All AI output critically reviewed against SOLID / patterns / Clean Architecture.
 - [x] AI-generated code covered by tests (unit + e2e) and a green build.
 - [x] Granular Conventional Commits so AI-assisted changes are traceable.
-- [x] Architecture decisions (ports, in-memory persistence, AOP via Nest primitives) made by the team.
+- [x] Architecture decisions (ports, PostgreSQL persistence with in-memory fallback, AOP via Nest
+  primitives) made by the team.
 - [x] No secrets/credentials shared in prompts (`.env` is git-ignored; only example values committed).
 - [x] Non-trivial decisions cited in code comments and this document.

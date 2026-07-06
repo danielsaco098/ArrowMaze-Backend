@@ -27,12 +27,15 @@ everything the game must not trust to the device alone:
 - **Global leaderboard** — best scores per level across all players.
 - **Remote level definitions** — fetch/update levels so new content ships **without** a new app release.
 
-> **Tech stack:** NestJS 11 · TypeScript (strict) · Passport-JWT · bcryptjs · `@nestjs/config` ·
-> `@nestjs/swagger` (OpenAPI) · Jest + Supertest (e2e).
+> **Tech stack:** NestJS 11 · TypeScript (strict) · Passport-JWT · bcryptjs · **TypeORM + PostgreSQL** ·
+> `@nestjs/config` · `@nestjs/swagger` (OpenAPI) · Jest + Supertest (e2e).
 >
-> _Persistence is **in-memory** by default (functional and dependency-free for demos and tests). It is a
-> deferrable detail: the repository ports (`UserRepository`, `LevelRepository`, `ProgressRepository`,
-> `LeaderboardRepository`) can be backed by a database (e.g. PostgreSQL) without touching the use cases._
+> _Persistence is **PostgreSQL via TypeORM** (local Postgres for development, a cloud Postgres such as
+> Neon for production — same code, different `DATABASE_URL`). Because the repository ports
+> (`UserRepository`, `ProgressRepository`, `LeaderboardRepository`) are abstractions, a dynamic
+> [`PersistenceModule`](./src/modules/persistence.module.ts) falls back to the original dependency-free
+> **in-memory** adapters when no `DATABASE_URL` is configured — and always under tests — without touching
+> the use cases. See [Database configuration](#-database-configuration)._
 
 ---
 
@@ -45,7 +48,7 @@ Same **Clean Architecture** dependency rule as the client — everything points 
 | **1 — Domain** | `src/domain` | Pure business rules, no framework imports. | Entities `User`, `LevelDefinition`, `ProgressRecord`, `LeaderboardEntry`; `DomainError` hierarchy (each carries its HTTP `status`) |
 | **2 — Application** | `src/application` | Use cases + ports (ports are **abstract classes** doubling as DI tokens). | Use cases `RegisterUser`, `LoginUser`, `GetLevels`/`GetLevel`/`UpsertLevel`, `SyncProgress`, `GetProgress`, `GetLeaderboard`; ports `UserRepository`, `PasswordHasher`, `TokenService`, `IdGenerator`, `LevelRepository`, `ProgressRepository`, `LeaderboardRepository` |
 | **3 — Interface Adapters** | `src/infrastructure/http` | REST controllers + DTOs (validation + Swagger). | `auth`, `levels`, `progress`/`leaderboard` controllers and DTOs |
-| **4 — Frameworks & Drivers** | `src/infrastructure`, `src/modules`, `src/shared` | Volatile details. | In-memory repositories, `JwtTokenService`/`BcryptPasswordHasher`/`UuidIdGenerator`, Passport `JwtStrategy`, guards, Nest modules, Swagger setup, config |
+| **4 — Frameworks & Drivers** | `src/infrastructure`, `src/modules`, `src/shared` | Volatile details. | TypeORM (PostgreSQL) + in-memory repositories selected by `PersistenceModule`, `JwtTokenService`/`BcryptPasswordHasher`/`UuidIdGenerator`, Passport `JwtStrategy`, guards, Nest modules, Swagger setup, config |
 
 The dependency rule means **use cases never import Nest or Express** — they depend on the abstract-class
 ports in `src/application/ports`, which the Layer 4 providers implement and the modules bind via DI.
@@ -68,7 +71,7 @@ flowchart TB
             end
             CONTROLLERS["Controllers + DTOs:<br/>Auth · Levels · Progress · Leaderboard"]
         end
-        INFRA["InMemory*Repository · JwtTokenService · BcryptPasswordHasher<br/>UuidIdGenerator · JwtStrategy/Guards · ExceptionFilter · LoggingInterceptor"]
+        INFRA["TypeOrm*Repository (PostgreSQL) / InMemory*Repository · JwtTokenService<br/>BcryptPasswordHasher · UuidIdGenerator · JwtStrategy/Guards · ExceptionFilter · LoggingInterceptor"]
     end
 
     CONTROLLERS -->|depends on| USECASES
@@ -122,11 +125,14 @@ classDiagram
     LevelsController --> UpsertLevelUseCase
     ProgressController --> SyncProgressUseCase
 
+    TypeOrmUserRepository ..|> UserRepository
     InMemoryUserRepository ..|> UserRepository
     BcryptPasswordHasher ..|> PasswordHasher
     JwtTokenService ..|> TokenService
     InMemoryLevelRepository ..|> LevelRepository
+    TypeOrmProgressRepository ..|> ProgressRepository
     InMemoryProgressRepository ..|> ProgressRepository
+    TypeOrmLeaderboardRepository ..|> LeaderboardRepository
     InMemoryLeaderboardRepository ..|> LeaderboardRepository
 ```
 
@@ -172,8 +178,8 @@ the Bearer-auth scheme are documented there.
 
 | Category | Pattern | Where / Why | Code |
 | --- | --- | --- | --- |
-| Creational | **Singleton** | NestJS providers are singletons by default, so the in-memory repositories hold one shared store per process and services exist once. | [in-memory-user-repository.ts](./src/infrastructure/persistence/in-memory-user-repository.ts) |
-| Structural | **Adapter** | `JwtTokenService` adapts Nest's `JwtService` to the `TokenService` port; `BcryptPasswordHasher` adapts bcryptjs to `PasswordHasher`; the in-memory repos adapt a `Map` to the repository ports. | [jwt-token-service.ts](./src/infrastructure/security/jwt-token-service.ts) · [bcrypt-password-hasher.ts](./src/infrastructure/security/bcrypt-password-hasher.ts) |
+| Creational | **Singleton** | NestJS providers are singletons by default, so each repository holds one shared store/connection per process and services exist once. | [in-memory-user-repository.ts](./src/infrastructure/persistence/in-memory-user-repository.ts) |
+| Structural | **Adapter** | `JwtTokenService` adapts Nest's `JwtService` to the `TokenService` port; `BcryptPasswordHasher` adapts bcryptjs to `PasswordHasher`; the TypeORM repos adapt PostgreSQL tables — and the in-memory repos a `Map` — to the same repository ports. | [typeorm-user-repository.ts](./src/infrastructure/persistence/typeorm/typeorm-user-repository.ts) · [jwt-token-service.ts](./src/infrastructure/security/jwt-token-service.ts) · [bcrypt-password-hasher.ts](./src/infrastructure/security/bcrypt-password-hasher.ts) |
 | Behavioral | **Strategy** | Passport's `JwtStrategy` defines the token-validation algorithm; the `TokenService`/repository ports make their implementations interchangeable (e.g. swap JWT or a DB backend) without changing use cases. | [jwt.strategy.ts](./src/infrastructure/security/jwt.strategy.ts) · [token-service.ts](./src/application/ports/token-service.ts) |
 
 ---
@@ -186,8 +192,9 @@ the Bearer-auth scheme are documented there.
 - **O — Open/Closed.** New endpoints/use cases are added without modifying existing ones; a new repository
   backend implements the port instead of editing the use case.
 - **L — Liskov Substitution.** Any [`UserRepository`](./src/application/ports/user-repository.ts)
-  implementation (in-memory now, a DB-backed one later, or a fake in tests) is substitutable without
-  breaking use cases.
+  implementation (Postgres-backed in production, in-memory in tests, or a fake) is substitutable without
+  breaking use cases — proven in practice: the TypeORM adapters replaced the in-memory ones with **zero**
+  changes to the use cases.
 - **I — Interface Segregation.** Narrow, focused ports
   ([`PasswordHasher`](./src/application/ports/password-hasher.ts),
   [`TokenService`](./src/application/ports/token-service.ts),
@@ -241,8 +248,36 @@ npm run start:prod   # run the compiled build
 ```
 
 On startup a default **admin** account is seeded (`admin` / `admin12345` by default) so the admin-only
-level endpoint is usable immediately. Sample levels are seeded too. Data is in-memory, so it resets on
-restart.
+level endpoint is usable immediately. Sample levels are seeded too.
+
+---
+
+## 🗄️ Database configuration
+
+Persistence targets **PostgreSQL** (users, progress, leaderboard) through TypeORM. The implementation is
+chosen at boot by [`PersistenceModule`](./src/modules/persistence.module.ts):
+
+| `DATABASE_URL` | Behaviour |
+| --- | --- |
+| Set (and not under tests) | **Postgres**: TypeORM connects, creates/updates the `users`, `progress` and `leaderboard` tables (`DATABASE_SYNCHRONIZE=true`), data survives restarts. |
+| Empty / tests | **In-memory** fallback: dependency-free `Map`-based adapters — ideal for unit/e2e tests and quick demos. |
+
+Copy [.env.example](./.env.example) to `.env` and set:
+
+```bash
+# Local development (local PostgreSQL instance)
+DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/arrowmaze
+DATABASE_SSL=false
+
+# Production (cloud PostgreSQL, e.g. Neon / Supabase)
+DATABASE_URL=postgresql://USER:PASSWORD@HOST/DBNAME
+DATABASE_SSL=true
+```
+
+The ORM entities live in Layer 4 ([`orm/`](./src/infrastructure/persistence/orm)) and are mapped to/from
+the domain entities by the TypeORM adapters ([`typeorm/`](./src/infrastructure/persistence/typeorm)), so
+the domain stays framework-free. Level definitions remain in-memory by design (static game content seeded
+at boot).
 
 ---
 

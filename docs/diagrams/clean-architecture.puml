@@ -19,7 +19,7 @@ rectangle "Layer 4 — Frameworks & Drivers\n(NestJS modules, Swagger, config)" 
     }
     card "AuthController, LevelsController,\nProgressController, LeaderboardController\n+ validated DTOs" as CONTROLLERS
   }
-  card "InMemory*Repository,\nJwtTokenService, BcryptPasswordHasher,\nUuidIdGenerator, JwtStrategy/Guards,\nDomainExceptionFilter, LoggingInterceptor" as INFRA
+  card "TypeOrm*Repository (PostgreSQL)\n/ InMemory*Repository (fallback),\nJwtTokenService, BcryptPasswordHasher,\nUuidIdGenerator, JwtStrategy/Guards,\nDomainExceptionFilter, LoggingInterceptor" as INFRA
 }
 
 ' Dependency rule: arrows always point INWARD
