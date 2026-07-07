@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { LeaderboardEntry } from '../../../domain/entities/leaderboard-entry';
+import {
+  LeaderboardEntry,
+  OverallLeaderboardEntry,
+} from '../../../domain/entities/leaderboard-entry';
 import { LeaderboardRepository } from '../../../application/ports/leaderboard-repository';
 import { LeaderboardOrmEntity } from '../orm/leaderboard.orm-entity';
 
@@ -40,6 +43,32 @@ export class TypeOrmLeaderboardRepository extends LeaderboardRepository {
     return rows.map(
       (row) =>
         new LeaderboardEntry(row.levelId, row.userId, row.username, row.score, row.achievedAt),
+    );
+  }
+
+  async topOverall(limit: number): Promise<OverallLeaderboardEntry[]> {
+    // Aggregate in SQL: sum of each player's best score across all levels.
+    const rows: Array<{ userId: string; username: string; total: string; levels: string }> =
+      await this.repo
+        .createQueryBuilder('entry')
+        .select('entry.userId', 'userId')
+        .addSelect('entry.username', 'username')
+        .addSelect('SUM(entry.score)', 'total')
+        .addSelect('COUNT(*)', 'levels')
+        .groupBy('entry.userId')
+        .addGroupBy('entry.username')
+        .orderBy('total', 'DESC')
+        .addOrderBy('username', 'ASC')
+        .limit(limit)
+        .getRawMany();
+    return rows.map(
+      (row) =>
+        new OverallLeaderboardEntry(
+          row.userId,
+          row.username,
+          Number(row.total),
+          Number(row.levels),
+        ),
     );
   }
 }
