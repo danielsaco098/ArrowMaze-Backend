@@ -8,3 +8,15 @@ export class LeaderboardEntry {
     public readonly achievedAt: Date,
   ) {}
 }
+
+/** A player's accumulated best scores across all levels (overall ranking). */
+export class OverallLeaderboardEntry {
+  constructor(
+    public readonly userId: string,
+    public readonly username: string,
+    /** Sum of the player's best score on every level they completed. */
+    public readonly totalScore: number,
+    /** How many distinct levels contribute to the total. */
+    public readonly levelsPlayed: number,
+  ) {}
+}

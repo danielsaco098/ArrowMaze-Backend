@@ -102,4 +102,20 @@ describe('Levels, progress and leaderboard (e2e)', () => {
     const leaderboard = await request(app.getHttpServer()).get('/leaderboard/1').expect(200);
     expect(leaderboard.body[0]).toMatchObject({ username: 'player_e2e', score: 880 });
   });
+
+  it('should_expose_the_overall_ranking_summing_best_scores_across_levels', async () => {
+    await request(app.getHttpServer())
+      .post('/progress/sync')
+      .set('Authorization', `Bearer ${playerToken}`)
+      .send({ results: [{ levelId: 2, score: 620 }] })
+      .expect(201);
+
+    const overall = await request(app.getHttpServer()).get('/leaderboard').expect(200);
+    // 880 (level 1, previous test) + 620 (level 2) = 1500 across 2 levels.
+    expect(overall.body[0]).toMatchObject({
+      username: 'player_e2e',
+      totalScore: 1500,
+      levelsPlayed: 2,
+    });
+  });
 });

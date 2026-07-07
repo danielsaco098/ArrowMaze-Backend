@@ -1,4 +1,4 @@
-import { LeaderboardEntry } from '../../domain/entities/leaderboard-entry';
+import { LeaderboardEntry, OverallLeaderboardEntry } from '../../domain/entities/leaderboard-entry';
 
 /** Port for the global leaderboard (DI token + abstraction). */
 export abstract class LeaderboardRepository {
@@ -6,4 +6,6 @@ export abstract class LeaderboardRepository {
   abstract record(entry: LeaderboardEntry): Promise<void>;
   /** Returns the top entries for a level, highest score first. */
   abstract topForLevel(levelId: number, limit: number): Promise<LeaderboardEntry[]>;
+  /** Returns the overall ranking (sum of best scores per player), highest first. */
+  abstract topOverall(limit: number): Promise<OverallLeaderboardEntry[]>;
 }
