@@ -21,7 +21,7 @@ describe('Auth (e2e)', () => {
     await app.close();
   });
 
-  it('should_register_then_login_and_return_a_token', async () => {
+  it('should_return_a_token_when_registering_and_logging_in', async () => {
     const credentials = { username: 'e2euser', password: 'secret123' };
 
     const registered = await request(app.getHttpServer())
@@ -38,27 +38,27 @@ describe('Auth (e2e)', () => {
     expect(loggedIn.body.accessToken).toEqual(expect.any(String));
   });
 
-  it('should_reject_a_duplicate_username_with_409', async () => {
+  it('should_return_409_when_the_username_is_taken', async () => {
     const credentials = { username: 'dupe', password: 'secret123' };
     await request(app.getHttpServer()).post('/auth/register').send(credentials).expect(201);
     await request(app.getHttpServer()).post('/auth/register').send(credentials).expect(409);
   });
 
-  it('should_reject_invalid_credentials_with_401', async () => {
+  it('should_return_401_when_credentials_are_invalid', async () => {
     await request(app.getHttpServer())
       .post('/auth/login')
       .send({ username: 'ghostuser', password: 'whatever1' })
       .expect(401);
   });
 
-  it('should_reject_a_malformed_payload_with_400', async () => {
+  it('should_return_400_when_the_payload_is_malformed', async () => {
     await request(app.getHttpServer())
       .post('/auth/register')
       .send({ username: 'ab' })
       .expect(400);
   });
 
-  it('should_report_health_ok', async () => {
+  it('should_report_ok_when_health_is_checked', async () => {
     const response = await request(app.getHttpServer()).get('/health').expect(200);
     expect(response.body.status).toBe('ok');
   });

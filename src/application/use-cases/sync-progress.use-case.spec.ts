@@ -15,7 +15,7 @@ function buildSubject() {
 }
 
 describe('SyncProgressUseCase', () => {
-  it('should_store_results_and_return_the_updated_progress', async () => {
+  it('should_return_updated_progress_when_results_are_synced', async () => {
     const { sync } = buildSubject();
 
     const progress = await sync.execute({
@@ -52,7 +52,7 @@ describe('SyncProgressUseCase', () => {
     expect(higher).toEqual([{ levelId: 1, bestScore: 950 }]);
   });
 
-  it('should_rank_players_by_score_on_the_leaderboard', async () => {
+  it('should_rank_players_by_score_when_the_leaderboard_is_read', async () => {
     const { sync, getLeaderboard } = buildSubject();
     await sync.execute({ userId: 'u1', username: 'alice', results: [{ levelId: 1, score: 800 }] });
     await sync.execute({ userId: 'u2', username: 'bob', results: [{ levelId: 1, score: 950 }] });

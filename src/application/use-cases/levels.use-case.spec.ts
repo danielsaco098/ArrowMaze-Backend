@@ -15,7 +15,7 @@ function buildSubject() {
 }
 
 describe('Levels use cases', () => {
-  it('should_return_seeded_levels_sorted_by_id', async () => {
+  it('should_return_levels_sorted_by_id_when_listing_the_seed', async () => {
     const { getLevels } = buildSubject();
 
     const levels = await getLevels.execute();
@@ -23,7 +23,7 @@ describe('Levels use cases', () => {
     expect(levels.map((l) => l.id)).toEqual(Array.from({ length: 15 }, (_, i) => i + 1));
   });
 
-  it('should_return_a_level_by_id', async () => {
+  it('should_return_the_level_when_queried_by_id', async () => {
     const { getLevel } = buildSubject();
 
     const level = await getLevel.execute(1);
@@ -56,7 +56,7 @@ describe('Levels use cases', () => {
     await expect(getLevel.execute(999)).rejects.toThrow(LevelNotFoundError);
   });
 
-  it('should_create_a_new_level_and_make_it_retrievable', async () => {
+  it('should_make_the_level_retrievable_when_a_new_one_is_upserted', async () => {
     const { getLevel, upsertLevel } = buildSubject();
 
     await upsertLevel.execute({
@@ -73,7 +73,7 @@ describe('Levels use cases', () => {
     expect(level.difficulty).toBe('HARD');
   });
 
-  it('should_overwrite_an_existing_level_on_upsert', async () => {
+  it('should_overwrite_the_level_when_the_id_already_exists', async () => {
     const { getLevel, upsertLevel } = buildSubject();
 
     await upsertLevel.execute({

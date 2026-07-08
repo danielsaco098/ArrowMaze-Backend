@@ -19,7 +19,7 @@ function buildSubject() {
 }
 
 describe('RegisterUserUseCase', () => {
-  it('should_create_a_user_with_a_hashed_password_and_return_a_token', async () => {
+  it('should_hash_the_password_and_return_a_token_when_registering', async () => {
     // Arrange
     const { users, useCase } = buildSubject();
 
