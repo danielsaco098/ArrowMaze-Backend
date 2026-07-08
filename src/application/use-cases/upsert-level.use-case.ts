@@ -9,6 +9,8 @@ export interface UpsertLevelInput {
   rows: number;
   cols: number;
   cells: CellData[];
+  /** Seconds allowed to clear the board; undefined = untimed. */
+  timeLimitSeconds?: number;
 }
 
 /** Creates or replaces a level definition (admin operation). */
@@ -24,6 +26,7 @@ export class UpsertLevelUseCase {
       input.rows,
       input.cols,
       input.cells,
+      input.timeLimitSeconds,
     );
     await this.levels.upsert(level);
     return level;

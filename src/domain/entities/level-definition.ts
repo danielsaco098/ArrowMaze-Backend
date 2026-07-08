@@ -1,5 +1,5 @@
 export type Difficulty = 'EASY' | 'MEDIUM' | 'HARD';
-export type CellKind = 'ARROW' | 'WALL' | 'EMPTY' | 'EXIT';
+export type CellKind = 'ARROW' | 'WALL' | 'EMPTY' | 'EXIT' | 'COLLECTIBLE';
 export type DirectionName = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
 
 export interface CellData {
@@ -25,5 +25,7 @@ export class LevelDefinition {
     public readonly rows: number,
     public readonly cols: number,
     public readonly cells: ReadonlyArray<CellData>,
+    /** Seconds allowed to clear the board; undefined = untimed. */
+    public readonly timeLimitSeconds?: number,
   ) {}
 }
