@@ -21,7 +21,10 @@ package "Layer 1 — Domain" #F5E6B3 {
     +rows: number
     +cols: number
     +cells: CellData[]
+    +timeLimitSeconds?: number
   }
+  class CellData <<interface>>
+  LevelDefinition *-- CellData : cells
   class LeaderboardEntry {
     +levelId: number
     +userId: string
@@ -114,7 +117,13 @@ JwtTokenService ..|> TokenService
 UuidIdGenerator ..|> IdGenerator
 
 legend right
+  | Color | Layer |
+  | <#F5E6B3> | 1 — Domain |
+  | <#E8DDF0> | 2 — Application |
+  | <#CFE8DA> | 3 — Interface Adapters |
+  | <#DDE6F0> | 4 — Frameworks & Drivers |
   Solid arrow = association / dependency
+  Filled diamond = composition
   Dashed + triangle = implements (realization)
   Patterns: Adapter (Jwt/Bcrypt/TypeOrm/InMemory impls),
   Strategy (JwtStrategy, TokenService), Singleton (Nest providers)
