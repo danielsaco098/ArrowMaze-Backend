@@ -55,91 +55,24 @@ ports in `src/application/ports`, which the Layer 4 providers implement and the 
 
 ### Layer diagram (dependency rule)
 
-```mermaid
-flowchart TB
-    subgraph L4["Layer 4 · Frameworks & Drivers"]
-        direction TB
-        subgraph L3["Layer 3 · Interface Adapters"]
-            direction TB
-            subgraph L2["Layer 2 · Application"]
-                direction TB
-                subgraph L1["Layer 1 · Domain"]
-                    DOMAIN["User · LevelDefinition · ProgressRecord<br/>LeaderboardEntry · DomainError"]
-                end
-                USECASES["Use cases: RegisterUser · LoginUser<br/>GetLevels/GetLevel/UpsertLevel<br/>SyncProgress/GetProgress/GetLeaderboard"]
-                PORTS["Ports (abstract classes): UserRepository · PasswordHasher<br/>TokenService · IdGenerator · LevelRepository<br/>ProgressRepository · LeaderboardRepository"]
-            end
-            CONTROLLERS["Controllers + DTOs:<br/>Auth · Levels · Progress · Leaderboard"]
-        end
-        INFRA["TypeOrm*Repository (PostgreSQL) / InMemory*Repository · JwtTokenService<br/>BcryptPasswordHasher · UuidIdGenerator · JwtStrategy/Guards · ExceptionFilter · LoggingInterceptor"]
-    end
+<div align="center">
 
-    CONTROLLERS -->|depends on| USECASES
-    USECASES -->|depends on| PORTS
-    USECASES -->|uses| DOMAIN
-    INFRA -.->|implements| PORTS
-```
+![Clean Architecture layers](./docs/diagrams/clean-architecture.png)
+
+</div>
 
 ### Class diagram (architecture-significant)
 
-```mermaid
-classDiagram
-    class UserRepository {
-        <<abstract>>
-    }
-    class PasswordHasher {
-        <<abstract>>
-    }
-    class TokenService {
-        <<abstract>>
-    }
-    class LevelRepository {
-        <<abstract>>
-    }
-    class ProgressRepository {
-        <<abstract>>
-    }
-    class LeaderboardRepository {
-        <<abstract>>
-    }
+<div align="center">
 
-    class RegisterUserUseCase
-    class LoginUserUseCase
-    class UpsertLevelUseCase
-    class SyncProgressUseCase
+![Class diagram](./docs/diagrams/class-diagram.png)
 
-    class AuthController
-    class LevelsController
-    class ProgressController
-
-    RegisterUserUseCase --> UserRepository
-    RegisterUserUseCase --> PasswordHasher
-    RegisterUserUseCase --> TokenService
-    LoginUserUseCase --> UserRepository
-    UpsertLevelUseCase --> LevelRepository
-    SyncProgressUseCase --> ProgressRepository
-    SyncProgressUseCase --> LeaderboardRepository
-
-    AuthController --> RegisterUserUseCase
-    AuthController --> LoginUserUseCase
-    LevelsController --> UpsertLevelUseCase
-    ProgressController --> SyncProgressUseCase
-
-    TypeOrmUserRepository ..|> UserRepository
-    InMemoryUserRepository ..|> UserRepository
-    BcryptPasswordHasher ..|> PasswordHasher
-    JwtTokenService ..|> TokenService
-    InMemoryLevelRepository ..|> LevelRepository
-    TypeOrmProgressRepository ..|> ProgressRepository
-    InMemoryProgressRepository ..|> ProgressRepository
-    TypeOrmLeaderboardRepository ..|> LeaderboardRepository
-    InMemoryLeaderboardRepository ..|> LeaderboardRepository
-```
+</div>
 
 > Editable diagram sources (PlantUML) live in
 > [`docs/diagrams/clean-architecture.puml`](./docs/diagrams/clean-architecture.puml) and
-> [`docs/diagrams/class-diagram.puml`](./docs/diagrams/class-diagram.puml). The Mermaid blocks above render
-> directly on GitHub; the PlantUML files can be exported to PNG with any PlantUML renderer.
+> [`docs/diagrams/class-diagram.puml`](./docs/diagrams/class-diagram.puml). The PNGs above are rendered
+> from those sources (re-render with any PlantUML tool).
 
 ---
 
