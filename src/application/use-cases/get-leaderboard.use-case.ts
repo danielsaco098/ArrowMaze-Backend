@@ -1,4 +1,3 @@
-import { Injectable } from '@nestjs/common';
 import { LeaderboardEntry, OverallLeaderboardEntry } from '../../domain/entities/leaderboard-entry';
 import { LeaderboardRepository } from '../ports/leaderboard-repository';
 
@@ -8,7 +7,6 @@ const MAX_LIMIT = 100;
 const clampLimit = (limit: number): number => Math.min(Math.max(1, limit), MAX_LIMIT);
 
 /** Returns the top scores for a level. */
-@Injectable()
 export class GetLeaderboardUseCase {
   constructor(private readonly leaderboard: LeaderboardRepository) {}
 
@@ -18,7 +16,6 @@ export class GetLeaderboardUseCase {
 }
 
 /** Returns the overall ranking: each player's best scores summed across levels. */
-@Injectable()
 export class GetOverallLeaderboardUseCase {
   constructor(private readonly leaderboard: LeaderboardRepository) {}
 

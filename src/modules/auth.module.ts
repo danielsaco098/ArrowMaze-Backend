@@ -4,6 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { RegisterUserUseCase } from '../application/use-cases/register-user.use-case';
 import { LoginUserUseCase } from '../application/use-cases/login-user.use-case';
+import { UserRepository } from '../application/ports/user-repository';
 import { PasswordHasher } from '../application/ports/password-hasher';
 import { TokenService } from '../application/ports/token-service';
 import { IdGenerator } from '../application/ports/id-generator';
@@ -37,13 +38,25 @@ import { DefaultAdminSeeder } from '../infrastructure/security/default-admin.see
   ],
   controllers: [AuthController],
   providers: [
-    RegisterUserUseCase,
-    LoginUserUseCase,
     JwtStrategy,
     DefaultAdminSeeder,
     { provide: PasswordHasher, useClass: BcryptPasswordHasher },
     { provide: TokenService, useClass: JwtTokenService },
     { provide: IdGenerator, useClass: UuidIdGenerator },
+    // Use cases are pure classes (no framework decorators), so they are built
+    // via factories that inject the ports — Layer 2 stays Nest-free.
+    {
+      provide: RegisterUserUseCase,
+      useFactory: (users: UserRepository, hasher: PasswordHasher, tokens: TokenService, ids: IdGenerator) =>
+        new RegisterUserUseCase(users, hasher, tokens, ids),
+      inject: [UserRepository, PasswordHasher, TokenService, IdGenerator],
+    },
+    {
+      provide: LoginUserUseCase,
+      useFactory: (users: UserRepository, hasher: PasswordHasher, tokens: TokenService) =>
+        new LoginUserUseCase(users, hasher, tokens),
+      inject: [UserRepository, PasswordHasher, TokenService],
+    },
   ],
   exports: [PassportModule, JwtModule],
 })

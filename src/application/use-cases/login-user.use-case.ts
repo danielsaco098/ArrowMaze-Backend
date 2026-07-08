@@ -1,4 +1,3 @@
-import { Injectable } from '@nestjs/common';
 import { InvalidCredentialsError } from '../../domain/errors/auth-errors';
 import { UserRepository } from '../ports/user-repository';
 import { PasswordHasher } from '../ports/password-hasher';
@@ -15,7 +14,6 @@ export interface LoginUserInput {
  * Returns the same generic error whether the user is missing or the password is
  * wrong, so the API never reveals which usernames exist.
  */
-@Injectable()
 export class LoginUserUseCase {
   constructor(
     private readonly users: UserRepository,

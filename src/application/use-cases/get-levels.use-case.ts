@@ -1,9 +1,7 @@
-import { Injectable } from '@nestjs/common';
 import { LevelDefinition } from '../../domain/entities/level-definition';
 import { LevelRepository } from '../ports/level-repository';
 
 /** Returns all level definitions, ordered by id. */
-@Injectable()
 export class GetLevelsUseCase {
   constructor(private readonly levels: LevelRepository) {}
 
