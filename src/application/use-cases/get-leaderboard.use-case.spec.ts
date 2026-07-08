@@ -9,7 +9,7 @@ const entry = (levelId: number, userId: string, score: number): LeaderboardEntry
   new LeaderboardEntry(levelId, userId, userId, score, new Date('2026-07-01T00:00:00Z'));
 
 describe('Leaderboard use cases', () => {
-  it('should_return_the_top_scores_for_a_level_highest_first', async () => {
+  it('should_return_top_scores_highest_first_when_a_level_is_queried', async () => {
     // Arrange
     const repo = new InMemoryLeaderboardRepository();
     await repo.record(entry(1, 'ana', 800));
@@ -23,7 +23,7 @@ describe('Leaderboard use cases', () => {
     expect(top.map((e) => e.username)).toEqual(['bob', 'ana']);
   });
 
-  it('should_sum_each_players_best_scores_across_levels_for_the_overall_ranking', async () => {
+  it('should_sum_each_players_best_scores_when_building_the_overall_ranking', async () => {
     // Arrange
     const repo = new InMemoryLeaderboardRepository();
     await repo.record(entry(1, 'ana', 800));
@@ -41,7 +41,7 @@ describe('Leaderboard use cases', () => {
     ]);
   });
 
-  it('should_clamp_the_limit_to_the_allowed_range', async () => {
+  it('should_clamp_the_limit_when_it_is_out_of_range', async () => {
     // Arrange
     const repo = new InMemoryLeaderboardRepository();
     await repo.record(entry(1, 'ana', 800));
