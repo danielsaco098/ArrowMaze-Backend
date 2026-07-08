@@ -14,7 +14,7 @@ import {
 } from 'class-validator';
 
 const DIFFICULTIES = ['EASY', 'MEDIUM', 'HARD'] as const;
-const CELL_KINDS = ['ARROW', 'WALL', 'EMPTY', 'EXIT'] as const;
+const CELL_KINDS = ['ARROW', 'WALL', 'EMPTY', 'EXIT', 'COLLECTIBLE'] as const;
 const DIRECTIONS = ['UP', 'DOWN', 'LEFT', 'RIGHT'] as const;
 
 export class CellDataDto {
@@ -82,6 +82,12 @@ export class UpsertLevelDto {
   @ValidateNested({ each: true })
   @Type(() => CellDataDto)
   cells!: CellDataDto[];
+
+  @ApiPropertyOptional({ minimum: 1, description: 'Seconds to clear the board; omit = untimed.' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  timeLimitSeconds?: number;
 }
 
 export class LevelResponseDto extends UpsertLevelDto {
