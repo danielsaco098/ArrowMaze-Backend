@@ -182,6 +182,50 @@ the Bearer-auth scheme are documented there.
 | Structural | **Adapter** | `JwtTokenService` adapts Nest's `JwtService` to the `TokenService` port; `BcryptPasswordHasher` adapts bcryptjs to `PasswordHasher`; the TypeORM repos adapt PostgreSQL tables — and the in-memory repos a `Map` — to the same repository ports. | [typeorm-user-repository.ts](./src/infrastructure/persistence/typeorm/typeorm-user-repository.ts) · [jwt-token-service.ts](./src/infrastructure/security/jwt-token-service.ts) · [bcrypt-password-hasher.ts](./src/infrastructure/security/bcrypt-password-hasher.ts) |
 | Behavioral | **Strategy** | Passport's `JwtStrategy` defines the token-validation algorithm; the `TokenService`/repository ports make their implementations interchangeable (e.g. swap JWT or a DB backend) without changing use cases. | [jwt.strategy.ts](./src/infrastructure/security/jwt.strategy.ts) · [token-service.ts](./src/application/ports/token-service.ts) |
 
+### Representative fragments
+
+<details>
+<summary><b>Singleton</b> — Nest providers are one shared instance per process</summary>
+
+```ts
+// src/modules/persistence.module.ts — each provider below is instantiated once
+// by Nest's DI container and shared by every consumer (Singleton scope).
+providers: [
+  { provide: UserRepository, useClass: TypeOrmUserRepository },
+  { provide: ProgressRepository, useClass: TypeOrmProgressRepository },
+  { provide: LeaderboardRepository, useClass: TypeOrmLeaderboardRepository },
+]
+```
+</details>
+
+<details>
+<summary><b>Adapter</b> — external libraries wrapped behind internal ports</summary>
+
+```ts
+// src/infrastructure/security/bcrypt-password-hasher.ts
+export class BcryptPasswordHasher extends PasswordHasher {
+  hash(plain: string): Promise<string> {
+    return bcrypt.hash(plain, this.saltRounds); // bcryptjs never leaks inward
+  }
+}
+// Same shape for TypeOrmUserRepository (PostgreSQL → UserRepository port)
+// and JwtTokenService (@nestjs/jwt → TokenService port).
+```
+</details>
+
+<details>
+<summary><b>Strategy</b> — interchangeable algorithms behind one contract</summary>
+
+```ts
+// src/application/ports/token-service.ts — the contract use cases depend on
+export abstract class TokenService {
+  abstract sign(payload: TokenPayload): Promise<string>;
+}
+// JwtTokenService implements it today; a PasetoTokenService could replace it
+// in one line of the module, with zero changes to RegisterUser/LoginUser.
+```
+</details>
+
 ---
 
 ## 🔠 SOLID Principles
