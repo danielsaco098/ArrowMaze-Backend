@@ -1,4 +1,3 @@
-import { Injectable } from '@nestjs/common';
 import { ProgressRecord } from '../../domain/entities/progress-record';
 import { LeaderboardEntry } from '../../domain/entities/leaderboard-entry';
 import { ProgressRepository } from '../ports/progress-repository';
@@ -20,7 +19,6 @@ export interface SyncProgressInput {
  * it updates the saved progress and the global leaderboard. Returns the player's
  * full, updated progress. Depends only on the repository ports.
  */
-@Injectable()
 export class SyncProgressUseCase {
   constructor(
     private readonly progress: ProgressRepository,

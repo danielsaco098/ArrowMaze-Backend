@@ -1,4 +1,3 @@
-import { Injectable } from '@nestjs/common';
 import { CellData, Difficulty, LevelDefinition } from '../../domain/entities/level-definition';
 import { LevelRepository } from '../ports/level-repository';
 
@@ -14,7 +13,6 @@ export interface UpsertLevelInput {
 }
 
 /** Creates or replaces a level definition (admin operation). */
-@Injectable()
 export class UpsertLevelUseCase {
   constructor(private readonly levels: LevelRepository) {}
 

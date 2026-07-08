@@ -1,4 +1,3 @@
-import { Injectable } from '@nestjs/common';
 import { User } from '../../domain/entities/user';
 import { UsernameTakenError } from '../../domain/errors/auth-errors';
 import { UserRepository } from '../ports/user-repository';
@@ -20,7 +19,6 @@ export interface AuthResult {
  * Registers a new player: rejects duplicate usernames, hashes the password,
  * persists the user and issues an access token. Depends only on ports.
  */
-@Injectable()
 export class RegisterUserUseCase {
   constructor(
     private readonly users: UserRepository,
