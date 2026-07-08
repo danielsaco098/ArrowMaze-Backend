@@ -330,13 +330,18 @@ at boot).
 ```bash
 npm test               # unit tests (Jest, AAA, should_..._when_...)
 npm run test:e2e       # integration tests (Supertest against the real Nest app)
+npm run test:pact      # Pact provider verification of the client's contract
 npm run test:cov       # coverage
 ```
 
 - **Unit** — use cases in isolation against fakes/in-memory adapters of the ports.
 - **Integration (e2e)** — the full application is bootstrapped and the HTTP endpoints are exercised with
   Supertest (register → login → JWT-protected calls, admin authorization, progress → leaderboard).
-- CI runs build + unit + e2e on every push and Pull Request (`.github/workflows/ci.yml`).
+- **Contract (Pact)** — [`test/pact-provider.pact-spec.ts`](./test/pact-provider.pact-spec.ts) replays the
+  consumer contract recorded by the client repo ([`test/pacts/`](./test/pacts)) against the real app with
+  in-memory persistence: provider states seed users/scores and a request filter injects a freshly issued
+  JWT. A breaking API change fails this step in CI.
+- CI runs build + unit + e2e + pact on every push and Pull Request (`.github/workflows/ci.yml`).
 
 ---
 

@@ -32,3 +32,6 @@ jobs:
 
       - name: Integration (e2e) tests
         run: npm run test:e2e
+
+      - name: Pact provider verification
+        run: npm run test:pact
