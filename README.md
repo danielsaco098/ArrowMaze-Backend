@@ -287,8 +287,9 @@ See [`AI_USAGE.md`](./AI_USAGE.md) — tools, per-task prompt logs, modification
 
 ## 🤝 Contributing
 
-See [`CONTRIBUTING.md`](./CONTRIBUTING.md): **Conventional Commits** in English, protected `main`,
-feature branches, and Pull Requests with passing CI.
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md): **Conventional Commits** in English (enforced locally by a
+**commitlint** commit-msg hook via husky), protected `main`, feature branches, and Pull Requests with
+passing CI.
 
 ---
 
