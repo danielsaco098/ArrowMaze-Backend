@@ -10,8 +10,7 @@ not, and is able to explain every file, pattern and decision during the defense.
 
 | Tool | Model / Version | Role in the workflow |
 | --- | --- | --- |
-| Claude Code | Claude Opus 4.8 | Pair-programming agent: scaffolding, code generation, test generation, refactoring, documentation, and running builds/tests in the terminal. |
-| _(add any others the team used, e.g. GitHub Copilot, ChatGPT)_ | — | — |
+| Claude Code | Claude Opus 4.8 (early phases), Claude Fable 5 (later sessions) | Pair-programming agent: scaffolding, code generation, test generation, refactoring, documentation, and running builds/tests in the terminal. |
 
 **Workflow.** The team drove the work in incremental tasks. For each task the team stated the goal and
 constraints (NestJS, Clean Architecture, ports as abstract classes, library-free AOP, AAA tests), the AI
@@ -113,18 +112,49 @@ was committed with Conventional Commits and a `Co-Authored-By: Claude` trailer f
 - **Lessons / limitations:** Ports as abstract classes paid off — zero changes to use cases or
   controllers. `synchronize=true` would be replaced by migrations in a production system.
 
+### Entry 008 — Overall leaderboard + multi-cell level content
+
+- **Task:** `GET /leaderboard` (best scores summed per player across levels) and re-syncing the served
+  levels with the client's multi-cell format (arrowId/color, walls, collectibles, time limits).
+- **Result:** `OverallLeaderboardEntry`, `topOverall` in both adapters (SQL `SUM/GROUP BY` in TypeORM,
+  map-aggregation in-memory), extended `CellData`/DTO, and the seed regenerated from the client's
+  deterministic generator so remote levels match the shipped game byte for byte.
+- **Team modifications:** Verified the SQL aggregation live against the real PostgreSQL data.
+
+### Entry 009 — Framework-free use cases (strict Clean Architecture)
+
+- **Task:** The README claimed use cases never import Nest, but every use case carried `@Injectable`.
+- **Result:** Decorators removed; modules now build the use cases via `useFactory` providers injecting the
+  abstract-class ports, so Layer 2 has zero framework imports (verifiable by grep).
+- **Lessons:** Documentation claims must be audited against the code mechanically — the contradiction had
+  survived several reviews.
+
+### Entry 010 — Pact provider verification
+
+- **Task:** Verify the consumer contract recorded by the client repo against the real NestJS app.
+- **Result:** `test:pact` boots the app with in-memory persistence, replays the 7 interactions, seeds each
+  provider state through the app's own endpoints, and swaps the consumer's placeholder token for a freshly
+  issued JWT via a request filter. Wired into CI.
+- **Team modifications / fix:** The first client contract over-specified the level-cell shape; this
+  verification is what caught it — the contract was corrected on the consumer side.
+
 ---
 
 ## 3. Critical Evaluation
 
-- **Approx. % of code AI-assisted:** A large majority of the code was drafted by Claude Code under the
-  team's direction; **100% was reviewed by the team**, run through the build and the unit + e2e suites, and
-  committed in small, traceable increments. _(Refine this estimate before delivery.)_
+- **Approx. % of code AI-assisted:** **~90% of the code was first drafted with AI assistance** — traceable
+  commit by commit through the `Co-Authored-By: Claude` trailer in the git history. **100% was reviewed by
+  the team**, run through the build and the unit + e2e + contract suites, and committed in small
+  increments; persistence and API decisions were set by the team before each task.
 - **Incorrect / suboptimal AI outputs and how we caught them:**
   - The initial README described a Prisma/PostgreSQL stack the project never used — caught during review and
-    corrected to the real in-memory design.
+    corrected to the real in-memory design (later PostgreSQL arrived for real, via TypeORM).
   - The first build failed on the `@nestjs/jwt` `expiresIn` type and on decorated-signature type imports —
     caught by `npm run build` and fixed.
+  - Use cases carried `@Injectable` while the docs claimed Layer 2 was framework-free — caught by a
+    mechanical grep audit, fixed with `useFactory` providers.
+  - The client's first Pact contract over-specified the level-cell shape — caught by this repo's provider
+    verification, corrected on the consumer side.
 - **Team reflection:** AI accelerated boilerplate (modules, DTOs, repositories, tests) substantially, but
   the architecture, the persistence decision, and the validation of every behavior were owned by the team.
   The build + e2e gate is what made AI output trustworthy.
@@ -139,5 +169,6 @@ was committed with Conventional Commits and a `Co-Authored-By: Claude` trailer f
 - [x] Granular Conventional Commits so AI-assisted changes are traceable.
 - [x] Architecture decisions (ports, PostgreSQL persistence with in-memory fallback, AOP via Nest
   primitives) made by the team.
-- [x] No secrets/credentials shared in prompts (`.env` is git-ignored; only example values committed).
+- [x] No secrets committed to the repository: credentials live only in git-ignored `.env` files, and
+  development database passwords are rotated before delivery.
 - [x] Non-trivial decisions cited in code comments and this document.
