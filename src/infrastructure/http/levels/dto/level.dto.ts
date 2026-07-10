@@ -53,6 +53,16 @@ export class CellDataDto {
   @IsString()
   @MaxLength(16)
   color?: string;
+
+  @ApiPropertyOptional({
+    minimum: 0,
+    description:
+      "Order of this cell along its arrow's winding path (0 = tail, highest = head).",
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  segmentIndex?: number;
 }
 
 export class UpsertLevelDto {
@@ -83,7 +93,10 @@ export class UpsertLevelDto {
   @Type(() => CellDataDto)
   cells!: CellDataDto[];
 
-  @ApiPropertyOptional({ minimum: 1, description: 'Seconds to clear the board; omit = untimed.' })
+  @ApiPropertyOptional({
+    minimum: 1,
+    description: 'Seconds to clear the board; omit = untimed.',
+  })
   @IsOptional()
   @IsInt()
   @Min(1)

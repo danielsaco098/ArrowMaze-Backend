@@ -11,6 +11,8 @@ export interface CellData {
   arrowId?: number;
   /** Optional display colour; the client derives one from arrowId when absent. */
   color?: string;
+  /** Order of this cell along its arrow's winding path (0 = tail, highest = head). */
+  segmentIndex?: number;
 }
 
 /**
