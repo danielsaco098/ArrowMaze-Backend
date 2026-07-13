@@ -10,7 +10,7 @@ remote level definitions. Built with **NestJS + TypeScript**, following **Clean 
 [![CI](https://github.com/danielsaco098/ArrowMaze-Backend/actions/workflows/ci.yml/badge.svg)](https://github.com/danielsaco098/ArrowMaze-Backend/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/tests-unit%20%7C%20e2e-success?logo=jest)](#-running-tests)
 [![NestJS](https://img.shields.io/badge/NestJS-11-E0234E?logo=nestjs&logoColor=white)](https://nestjs.com)
-[![Swagger](https://img.shields.io/badge/API-OpenAPI%2FSwagger-85EA2D?logo=swagger&logoColor=black)](#-api-documentation)
+[![Swagger](https://img.shields.io/badge/API-Live%20Swagger-85EA2D?logo=swagger&logoColor=black)](https://arrowmaze-backend-production-b1b0.up.railway.app/api/docs)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
 </div>
@@ -96,11 +96,12 @@ ports in `src/application/ports`, which the Layer 4 providers implement and the 
 
 ## 📚 API Documentation
 
-Interactive **Swagger / OpenAPI** docs are served at:
+Interactive **Swagger / OpenAPI** docs:
 
-```
-http://localhost:3000/api/docs
-```
+- **Live demo (deployed):** <https://arrowmaze-backend-production-b1b0.up.railway.app/api/docs> —
+  the API running on Railway (PostgreSQL on Neon), reachable from any browser without running anything
+  locally. This is a temporary demo instance and may be taken down after delivery.
+- **Local:** `http://localhost:3000/api/docs` when running the server yourself (`npm run start:dev`).
 
 The raw OpenAPI JSON is available at `/api/docs-json`. All eight endpoints, request/response schemas and
 the Bearer-auth scheme are documented there.
